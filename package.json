@@ -1,0 +1,25 @@
+{
+  "name": "memeroyalebackend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel --presets es2015 -d lib/ src",
+    "start": "babel-node src/index.js"    
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adarsh9pai/MemeRoyaleBackend.git"
+  },
+  "author": "Adarsh Yogesh Pai, James Brady, Robert Brady, Nahian Alam",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/adarsh9pai/MemeRoyaleBackend/issues"
+  },
+  "homepage": "https://github.com/adarsh9pai/MemeRoyaleBackend#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1"
+  }
+}
