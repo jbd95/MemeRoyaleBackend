@@ -40,7 +40,8 @@ app.get('/rooms/create', function (req, res) {
     else {
         newRoom.name = newRoom.code
     }
-    res.json({ message : "room added" })
+    createRoom(newRoom, res)
+    //res.json({ message : "room added" })
 })
 
 app.get('/rooms', function (req, res) { 
@@ -88,7 +89,7 @@ const func2 = (token, val2) => {
 }
 
 
-function createRoom(roomCode) { 
+function createRoom(roomCode, res) { 
     
     let options = {
         database: DATABASE_NAME,
@@ -96,15 +97,22 @@ function createRoom(roomCode) {
         query: JSON.stringify(roomCode)
     }
 
-    mlab.listDocuments(options, function(err, data) {
+    mLab.listDocuments(options, function(err, data) {
         if (err) throw err;
 
 	if (!data)
 	{
-	    mlab.insertDocuments(options, function(err, data)
+	    delete options['query']
+	    options['documents'] = roomCode
+	    mLab.insertDocuments(options, function(err, data)
 	    {
-		console.log("new room added")
+		if (err) throw err;
+		res.json({message: "success"})
 	    })
+	}
+	else
+	{
+	    res.json({message: "fail - room already exists"})
 	}
     })
 }
