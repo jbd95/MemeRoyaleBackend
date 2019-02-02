@@ -100,7 +100,7 @@ function createRoom(roomCode, res) {
     mLab.listDocuments(options, function(err, data) {
         if (err) throw err;
 
-	if (!data)
+	if (data.length === 0)
 	{
 	    delete options['query']
 	    options['documents'] = roomCode
