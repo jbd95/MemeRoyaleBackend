@@ -1,14 +1,11 @@
-/*
-        Main Server File
-*/
-const express = require('express')
-const app = express()
-const server = require('http').Server(app)
-const io = require('socket.io')(server)
-const PORT = process.env.PORT || 3001
+const app = require('express')()
+const http = require('http').Server(app)
+const PORT = process.env.PORT || 5001
 
-server.listen(PORT)
+app.get('/', function(req, res){
+  res.json({message:"success"})
+})
 
-app.get('/index', function (req, res) {
-    res.send("Thanks for visiting")
+http.listen(PORT, function(){
+  console.log('listening on *:',PORT)
 })
