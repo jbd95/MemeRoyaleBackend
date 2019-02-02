@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 3000
 const MAX_ROOM_COUNT = 1000000
 const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
 const DATABASE_NAME = "memeroyale"
-let All_Rooms = []
 
 http.listen(PORT, function () {
 	console.log('listening on *:', PORT)
@@ -23,9 +22,9 @@ app.get('/index', function (req, res) {
 	res.send("Thanks for visiting")
 })
 
-//app.get('/room/join', function (req, res) {
-//    res.json({'value' : key})
-//})
+app.get('/room/join', function (req, res) {
+    
+})
 
 app.get('/rooms/create', function (req, res) {
 
@@ -93,12 +92,64 @@ app.get('/rooms', function (req, res) {
 	})
 })
 
-/* SOCKET IO COMMUNICATION */
-io.on('connection', function (socket) {
-	console.log("client connected to socket")
+app.get('/user/add', function(req, res)
+{
 
+	let newUser = {
+		name : req.query.username,
+		room : {},
+		score : 0
+	}
+
+	let options = {
+		database: DATABASE_NAME,
+		collectionName: "Users",
+		query: JSON.stringify({ name : req.query.username})
+	}
+
+	mLab.listDocuments(options, function(err, data) {
+			if (err) throw err;
+
+			if (data.length === 0)
+			{
+				delete options['query']
+				options['documents'] = newUser
+				mLab.insertDocuments(options, function(err, data)
+				{
+					if (err) throw err;
+						res.json({message: "success"})
+				})
+			}
+			else
+			{
+				res.json({message: "fail - user already exists"})
+			}
+	})
 
 })
+
+app.get('/user', function(req, res)
+{
+	let options = {
+		database: DATABASE_NAME,
+		collectionName: "Users",
+		query: JSON.stringify({ name : req.query.username})
+	}
+
+	mLab.listDocuments(options, function(err, data) {
+			if (err) throw err;
+
+			if (data.length === 0)
+			{
+				res.json({ message: "fail - user does not exist" })
+			}
+			else
+			{
+				res.json(data[0])
+			}
+	})
+})
+
 
 const randomCode = max => {
 	let proposedCode = Math.floor((Math.random() * max) + 1).toString(16).toUpperCase();
@@ -108,43 +159,24 @@ const randomCode = max => {
 	return randomCode(max)
 }
 
-const func1 = token => {
+/*const func1 = token => {
 
 }
 
 
 const func2 = (token, val2) => {
 
-}
+}*/
+			
 
 
-function createRoom(roomCode, res) { 
+/* SOCKET IO COMMUNICATION */
+io.on('connection', function (socket) {
+	console.log("client connected to socket")
 
-	let options = {
-		database: DATABASE_NAME,
-		collectionName: "Rooms",
-		query: JSON.stringify(roomCode)
-	}
 
-	mLab.listDocuments(options, function(err, data) {
-		if (err) throw err;
+})
 
-		if (data.length === 0)
-		{
-			delete options['query']
-			options['documents'] = roomCode
-			mLab.insertDocuments(options, function(err, data)
-				{
-					if (err) throw err;
-					res.json({message: "success"})
-				})
-		}
-		else
-		{
-			res.json({message: "fail - room already exists"})
-		}
-	})
-}
 
 function joinRoom(socket, roomCode) {
 	if (roomCode in All_Rooms) {
