@@ -5,8 +5,10 @@
 const app = require('express')()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
-const PORT = process.env.PORT || 5001
+const PORT = process.env.PORT || 3000
 const MAX_ROOM_COUNT = 1000000
+const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
+const DATABASE_NAME = "memeroyale"
 let All_Rooms = []
 
 http.listen(PORT, function () {
@@ -38,16 +40,27 @@ app.get('/rooms/create', function (req, res) {
     else {
         newRoom.name = newRoom.code
     }
-    if (createRoom(newRoom)) {
-        res.json({ 'message': 'success' })
-    }
-    else {
-        res.json({ 'message': 'fail - name needs to be unique' })
-    }
+    res.json({ message : "room added" })
 })
 
-app.get('/rooms', function (req, res) {
-    res.json({ 'rooms': All_Rooms })
+app.get('/rooms', function (req, res) { 
+   
+    let options = {
+        database: DATABASE_NAME,
+	collectionName: "Rooms"
+    }
+    mLab.listDocuments(options, function(err, data) {
+        if (err) throw err;
+
+	if(data)
+	{
+		res.json({rooms : data})
+	}
+	else
+	{
+		res.json({rooms : {}})
+	}
+    })
 })
 
 /* SOCKET IO COMMUNICATION */
@@ -60,9 +73,9 @@ io.on('connection', function (socket) {
 const randomCode = max => {
     let proposedCode = Math.floor((Math.random() * max) + 1).toString(16).toUpperCase();
     if (!(proposedCode in All_Rooms)) {
-        return proposedCode;
+        return proposedCode
     }
-    return randomCode(max);
+    return randomCode(max)
 }
 
 const func1 = token => {
@@ -73,12 +86,27 @@ const func1 = token => {
 const func2 = (token, val2) => {
 
 }
-function createRoom(roomCode) {
-    if (!(roomCode in All_Rooms)) {
-        All_Rooms.push(roomCode)
-        return true;
+
+
+function createRoom(roomCode) { 
+    
+    let options = {
+        database: DATABASE_NAME,
+	collectionName: "Rooms",
+        query: JSON.stringify(roomCode)
     }
-    return false;
+
+    mlab.listDocuments(options, function(err, data) {
+        if (err) throw err;
+
+	if (!data)
+	{
+	    mlab.insertDocuments(options, function(err, data)
+	    {
+		console.log("new room added")
+	    })
+	}
+    })
 }
 
 function joinRoom(socket, roomCode) {
