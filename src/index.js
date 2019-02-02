@@ -2,13 +2,18 @@
 	Main Server File
 */
 
-const app = require('express')()
+const express = require('express')
+const app = express()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 4000
 const MAX_ROOM_COUNT = 1000000
 const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
 const DATABASE_NAME = "memeroyale"
+const meme = require('./getMeme')
+const memegen = require('./memes')
+
+app.use('/meme',meme)
 
 let sockets = []
 
