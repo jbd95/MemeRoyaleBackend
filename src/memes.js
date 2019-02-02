@@ -1,4 +1,4 @@
-export default memegenEndpoints = {
+module.exports.memegen = {
     'X,X Everywhere' : 'buzz',
     '10 Guy' : 'tenguy',
     'Afraid to Ask Andy' : 'afraid',
