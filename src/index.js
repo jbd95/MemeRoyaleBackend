@@ -15,6 +15,8 @@ const memegen = require('./memes')
 
 app.use('/meme',meme)
 
+let sockets = []
+
 http.listen(PORT, function () {
 	console.log('listening on *:', PORT)
 })
@@ -183,11 +185,59 @@ io.on('connection', function (socket) {
 })
 
 
-function joinRoom(socket, roomCode) {
-	if (roomCode in All_Rooms) {
-		socket.leave(socket.currentRoom)
-		socket.join(roomCode)
-		socket.currentRoom = roomCode
-		console.log("client changed room")
+io.on('connection', function(socket)
+{
+	console.log("client connected")
+	//socket.emit('message', "hello client");
+
+	socket.on('user', function(username)
+	{
+		sockets.push({ name : username, connection : socket})
+		socket.username = username
+		socket.currentRoom = ""
+		socket.emit('debug', 'User configured')
+	});
+	socket.on('room', function(newRoom)
+	{
+		joinRoom(socket, newRoom)
+	});
+	socket.on('to_general', function(message)
+	{
+		console.log("server recieved: " + message);
+		io.to("general").emit('general_message', message);
+	});
+	
+	socket.on('disconnect', function()
+	{
+		console.log("client disconnected");
+		socket.leave(socket.currentRoom);
+	});
+});
+
+function joinRoom(socket, newRoom) {
+	
+	let options = {
+		database: DATABASE_NAME,
+		collectionName: "Rooms",
+		query: JSON.stringify(newRoom)
 	}
+
+	mLab.listDocuments(options, function(err, data) {
+		if (err) throw err;
+
+		if (data.length === 0)
+		{
+			socket.emit('debug', 'fail - room does not exist')
+		}
+		else
+		{
+			if(socket.currentRoom !== "") {
+				socket.leave(socket.currentRoom)
+			}
+			socket.join(newRoom)
+			socket.currentRoom = newRoom
+			socket.emit('debug', 'success')
+		}
+	})
+
 }
