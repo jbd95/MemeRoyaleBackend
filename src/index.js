@@ -87,7 +87,7 @@ app.get('/users/create', function(req, res)
 	let newUser = {
 		name : req.query.username,
 		room : {},
-		score : 0,
+		score : 0
 	}
 
 	let options = {
@@ -272,13 +272,10 @@ io.on('connection', function(socket)
 		sockets.push(socket)
 		socket.username = username
 		socket.currentRoom = {}
-		socket.emit('debug', 'User configured')
 	})
 	socket.on('room', function(newRoom)
 	{
-		socket.emit('debug', 'starting room')
 		joinRoom(socket, newRoom)
-		socket.emit('debug', 'joined new room')
 		io.to(socket.currentRoom.code).emit('debug', 'You are in room ' + socket.currentRoom.code)
 	})
 	socket.on('to_general', function(message)
@@ -289,7 +286,8 @@ io.on('connection', function(socket)
 
 	socket.on('creator', function(data)
 	{
-		//updateEntry(DATABASE_NAME, 'Rooms', { creator : data.name });)	
+		console.log('received update for creator')
+		updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { creator : data.name })	
 	})
 		
 	socket.on('caption', function(data)
@@ -345,7 +343,7 @@ function joinRoom(socket, newRoom) {
 			}
 			socket.join(newRoom.code)
 			socket.currentRoom = newRoom
-			socket.emit('debug', 'success')
+			//socket.emit('debug', 'success')
 		}
 	})
 	
