@@ -22,6 +22,7 @@
     "babel-preset-es2015": "^6.24.1",
     "mongolab-data-api": "^1.1.6",
     "node-fetch": "^2.3.0",
+    "request": "^2.88.0",
     "socket.io": "^2.2.0"
   }
 }
