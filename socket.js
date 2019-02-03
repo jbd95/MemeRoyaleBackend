@@ -6,6 +6,9 @@ socket.on('connect', function () {
     console.log("connected to server");
     socket.emit('user', process.argv[2]);
     socket.emit('room', { name: process.argv[3], code: process.argv[4] })
+    socket.emit('creator', { name: process.argv[2], code: process.argv[4] })
+
+    //socket.emit('caption', {name: "awesomesauce", caption: "updated caption", code: "A2A41"})
 });
 
 socket.on('debug', function (data) {

@@ -29,13 +29,28 @@ module.exports.createRoom = (roomCode, res)=>{
 	})
 }
 
-module.exports = updateEntry = (dbName, colName, query, updates) => {
+module.exports.getEntry = (dbName, colName, query, socket, msgTag) => {
+	let options = {
+		database: dbName,
+		collectionName: colName,
+		query: JSON.stringify(query)
+	}
+
+	mLab.listDocuments(options, function(err, data)
+	{
+		if (err) throw err
+		socket.emit(msgTag, data)
+	})
+
+}
+
+module.exports.updateEntry = (dbName, colName, query, updates) => {
 	
 	let options = {
 		database: dbName,
 		collectionName: colName,
 		data: updates,
-		query: query,
+		query: JSON.stringify(query)
 	}
 
 	mLab.updateDocuments(options, function(err, data)

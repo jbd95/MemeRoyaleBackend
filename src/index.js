@@ -38,12 +38,12 @@ io.on('connection', function(socket)
 	{
 		sockets.push(socket)
 		socket.username = username
-		socket.currentRoom = {}
+		socket.currentRoom = { name : "", code : ""}
 	})
 	socket.on('room', function(newRoom)
 	{
 		joinRoom(socket, newRoom)
-		io.to(socket.currentRoom.code).emit('debug', 'You are in room ' + socket.currentRoom.code)
+        io.to(getCurrentRoom(socket)).emit('debug', 'You are in room ' + getCurrentRoom(socket))
 	})
 	socket.on('to_general', function(message)
 	{
@@ -51,24 +51,78 @@ io.on('connection', function(socket)
 		io.to("general").emit('general_message', message)
 	})
 
+
+	/* SET FUNCTIONS*/
 	socket.on('creator', function(data)
 	{
-		console.log('received update for creator')
 		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { creator : data.name })	
 	})
 		
 	socket.on('caption', function(data)
 	{
-		console.log(data)
 		mLabHelpers.submitCaption(DATABASE_NAME, 'Rooms', { code : data.code }, { name : data.name, caption : data.caption, votes : 0 }, socket) 
 	})
+
+	socket.on('picker', function(data)
+	{
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { currentChooser : data.name})
+	})
 	
+	socket.on('active', function(data)
+	{
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { isActive : data.value })
+	})
+
+	socket.on('meme_selected', function(data)
+	{
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { isMemeSelected : data.value })
+	})
+	
+	socket.on('started', function(data)
+	{
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { hasStarted : value })
+	})
+
+	socket.on('current_meme', function(data)
+	{
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { currentMeme : data.value})
+	})
+
+	socket.on('submission_ended', function(data)
+	{
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { isSubmissionEnded : data.value })
+	})
+
+	socket.on('voting_ended', function(data)
+	{
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { isVotingEnded : data.value})
+	})
+
+
+	/* GET FUNCTIONS */
+	/*socket.on('get_room', function(data)
+	{
+		mLabHelpers.getEntry(DATABASE_NAME, 'Rooms', { code : data.code }, socket, 'room')
+	}*/
+
+
 	socket.on('disconnect', function()
 	{
 		console.log("client disconnected")
-		socket.leave(socket.currentRoom)
+		joinRoom(socket, { name: '', code: '' })
+		socket.leave(getCurrentRoom(socket))
 	})
 })
+
+function getCurrentRoom(socket)
+{
+    if (!socket.currentRoom)
+    {
+        socket.currentRoom = { name: "", code: "" }
+        return socket.currentRoom.code
+    }
+    return socket.currentRoom.code
+}
 
 function sendRoomMessage(roomCode, msgTag, msg)
 {
@@ -103,8 +157,8 @@ function joinRoom(socket, newRoom) {
 		}
 		else
 		{
-			if(socket.currentRoom != null && socket.currentRoom.code !== {}) {
-				socket.leave(socket.currentRoom.code)
+            		if (getCurrentRoom(socket) !== {}) {
+                		socket.leave(getCurrentRoom(socket))
 			}
 			socket.join(newRoom.code)
 			socket.currentRoom = newRoom
@@ -115,7 +169,7 @@ function joinRoom(socket, newRoom) {
 	options = {
 		database: DATABASE_NAME,
 		collectionName: "Users",
-		data: { room : socket.currentRoom.code},
+        data: { room: getCurrentRoom(socket)},
 		query: JSON.stringify({ name : socket.username })
 	}
 
