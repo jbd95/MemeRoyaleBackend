@@ -64,72 +64,55 @@ module.exports.updateEntry = (dbName, colName, query, updates) => {
 
 module.exports.submitVote = (dbName, colName, query, caption, res) => {
 
-	let options = {
+	let userOptions = {
 		database: dbName,
-		collectionName: colName,
-		query: JSON.stringify(query)
+		collectionName: 'Users',
+		query: JSON.stringify( { room : query.code})
 	}
 
-	
-	mLab.listDocuments(options, function(err, data)
+	let userCount = null
+	mLab.listDocuments(userOptions, function(err, data)
 	{
-		if(err) throw err
-		if (data.length <= 0)
+		userCount = data.length
+		let totalVotes = 0
+
+		for(let i = 0; i < data.length; i++)
 		{
-			return
-		}
-	
-		let i = 0
-		for (; i < data[0].captions.length; i++)
-		{
-			if (data[0].captions[i].name === caption.name)
+			if (data[i].name === caption.name)
 			{
-				data[0].captions[i]['votes'] += 1
-				break
+				data[i].score += 1
+
+
+				userOptions['data'] = { score : data[i].score }
+
+				mLab.updateDocuments(userOptions, function(err2, data2)
+				{
+					return
+				})
 			}
+			totalVotes += data[i].score
 		}
 
-		
-		
-		options['data'] = { captions : data[0].captions[i], isVotingEnded: 1 }
-
-		let uoptions = {
-			database : dbName,
-			collectionName : 'Users',
-			query : JSON.stringify({ name : caption.name})
-		}
-
-		console.log(uoptions)
-
-		mLab.listDocuments(uoptions, function(err, idata)
+		console.log("total votes: " + totalVotes)
+		console.log("user count: " + userCount)
+		if(totalVotes >= userCount)
 		{
-			if(err) throw err
-
-
-			if(idata.length <= 0)
-			{
-				return
+			let options = {
+				database: dbName,
+				collectionName: "Rooms",
+				query : JSON.stringify({ code : query.code}),
+				data: { isVotingEnded: 1 }
 			}
 
-			idata[0]['score'] += 1
-			uoptions['data'] = idata[0]
-		
-
-			mLab.updateDocuments(uoptions, function(err, input)
+			mLab.updateDocuments(options, function(err3, data3)
 			{
-				if (err) throw err
+				console.log(data3)
 				return
 			})
-		})
+		}
 
-	
-		mLab.updateDocuments(options, function(err, input)
-		{
-			if (err) throw err
-			console.log(input)
-
-		})
 	})
+
 }
 
 
@@ -173,69 +156,45 @@ module.exports.submitCaption = (dbName, colName, query, caption, socket) => {
 	}
 
 
-	let uoptions = {
+	let userOptions = {
 		database: dbName,
 		collectionName: 'Users',
-		query: JSON.stringify({ room : query.code})
+		query: JSON.stringify( { room : query.code})
 	}
-
-
-	let users = null
-
-	mLab.listDocuments(uoptions, function(err, data)
+	let userCount = null
+	mLab.listDocuments(userOptions, function(err, data)
 	{
-		if (err) throw err
-	
-		users = data.length
+		userCount = data.length
 	})
 
 
+	let allCaptions = null;
 	mLab.listDocuments(options, function(err, data)
 	{
-		if(err) throw err
-		if (data.length <= 0)
+		if(data.length > 0)
 		{
-			return
+			allCaptions = data[0].captions
 		}
-	
-		let replaced = false
-		for (let i = 0; i < data[0].captions.length; i++)
-		{
-			if (data[0].captions[i].name === caption.name)
-			{
-				data[0].captions[i] = caption
-				replaced = true
-			}
-		}
+		allCaptions.push(caption)
 
-		if(!replaced)
+		if (allCaptions.length >= userCount)
 		{
-			data[0].captions.push(caption)
-		}
-
-
-		console.log(data[0])
-		console.log(data[0].captions.length)
-		console.log(users - 1)
-		
-		if(data[0].captions.length >= (users - 1))
-		{
-			options['data'] = { captions : data[0].captions, isSubmissionEnded : 1 }
+			options['data'] = { captions: allCaptions, isSubmissionEnded: 1}
 		}
 		else
 		{
-			options['data'] = { captions : data[0].captions }
+			options['data'] = { captions: allCaptions }
 		}
 
-		console.log(options['data'])
-	
-		mLab.updateDocuments(options, function(err, input)
+
+		mLab.updateDocuments(options, function(err2, data2)
 		{
-			if (err) throw err;
-			console.log(input)
-			socket.emit('debug', 'caption recieved')
+			return
 		})
 	})
+
+
+
 }
 
 

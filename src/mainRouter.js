@@ -42,6 +42,11 @@ app.get('/rooms/meme/select', function(req, res)
 	res.json({ message: 'meme selected'  })
 })
 
+app.get('/rooms/round', function(req, res)
+{
+	mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : req.query.room }, { isMemeSelected: 0, currentMeme: '', captions: [], isSubmissionEnded: 0, isVotingEnded: 0})
+})
+
 app.get('/rooms/create', function (req, res) {
 
 	let newRoom = {
@@ -55,7 +60,8 @@ app.get('/rooms/create', function (req, res) {
 		currentMeme: {},
 		captions: [],
 		isSubmissionEnded: 0,
-		isVotingEnded: 0
+		isVotingEnded: 0,
+		numRounds: 0
 	}
 
 	if (req.query.name && req.query.name !== "") {
