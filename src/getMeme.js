@@ -2,12 +2,13 @@ const express = require('express')
 const router = express.Router()
 const memegen = require('./memes')
 const requestAPI = require('request')
+const fs = require('fs');
 
 router.get('/',(request, response)=>{
     let memeSchema = {
         template: memegen.memegen[request.query.template] || "10 Guy",
-        upperText: request.query.upperText || "IDC",
-        bottomText: request.query.lowerText || "No Captions for U Boi",
+        upperText: request.query.upperText || "MemeRoyale Sample",
+        bottomText: request.query.lowerText || "MemeRoyale Sample",
     }
 
     let link = 'https://memegen.link/'+memeSchema.template+'/'+memeSchema.upperText+'/'+memeSchema.bottomText
@@ -22,5 +23,17 @@ router.get('/',(request, response)=>{
     
 })
 
+    router.get('/getCarousel',(request, response)=>{
+        let set = Object.keys(memegen.memegen)
+        let setArray = []
+        let low = 10, high = 80
+        for(let i = 0; i < 6; i++){
+            let random = Math.floor(Math.random()* (+high - +low))+ +low;
+            setArray.push({endpoint:set[random]})
+            
+        }
+        console.log(setArray)
+        response.json({collection:setArray})
+    })
 
 module.exports = router
