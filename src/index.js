@@ -103,7 +103,7 @@ function joinRoom(socket, newRoom) {
 		}
 		else
 		{
-			if(socket.currentRoom != NULL && socket.currentRoom.code !== {}) {
+			if(socket.currentRoom != null && socket.currentRoom.code !== {}) {
 				socket.leave(socket.currentRoom.code)
 			}
 			socket.join(newRoom.code)

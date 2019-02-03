@@ -3,6 +3,7 @@ const app = express.Router()
 const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
 let mLabHelpers = require('./mLabHelpers')
 const meme = require('./getMeme')
+const DATABASE_NAME = "memeroyale"
 
 app.use('/meme',meme)
 

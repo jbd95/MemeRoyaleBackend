@@ -1,5 +1,5 @@
 const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
-
+const DATABASE_NAME = "memeroyale"
 
 module.exports.createRoom = (roomCode, res)=>{ 
 
