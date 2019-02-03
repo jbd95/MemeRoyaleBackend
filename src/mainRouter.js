@@ -69,8 +69,16 @@ app.get('/rooms/create', function (req, res) {
 
 app.get('/rooms/meme/vote', function(req, res)
 {
-	mLabHelps.updateEntity(DATABASE_NAME, 'Rooms', { code : req.query.code }, 
-}
+	mLabHelpers.submitVote(DATABASE_NAME, 'Rooms', { code : req.query.room }, { name : req.query.name })
+	res.json({ message : 'success' })
+
+})
+
+
+app.get('/rooms/winner', function(req, res)
+{
+	mLabHelpers.getWinner(DATABASE_NAME, 'Rooms', { code : req.query.room }, res)	
+})
 
 app.get('/rooms', function (req, res) { 
 

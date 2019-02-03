@@ -61,6 +61,110 @@ module.exports.updateEntry = (dbName, colName, query, updates) => {
 
 }
 
+
+module.exports.submitVote = (dbName, colName, query, caption, res) => {
+
+	let options = {
+		database: dbName,
+		collectionName: colName,
+		query: JSON.stringify(query)
+	}
+
+	
+	mLab.listDocuments(options, function(err, data)
+	{
+		if(err) throw err
+		if (data.length <= 0)
+		{
+			return
+		}
+	
+		let i = 0
+		for (; i < data[0].captions.length; i++)
+		{
+			if (data[0].captions[i].name === caption.name)
+			{
+				data[0].captions[i]['votes'] += 1
+				break
+			}
+		}
+
+		
+		
+		options['data'] = { captions : data[0].captions[i], isVotingEnded: 1 }
+
+		let uoptions = {
+			database : dbName,
+			collectionName : 'Users',
+			query : JSON.stringify({ name : caption.name})
+		}
+
+		console.log(uoptions)
+
+		mLab.listDocuments(uoptions, function(err, idata)
+		{
+			if(err) throw err
+
+
+			if(idata.length <= 0)
+			{
+				return
+			}
+
+			idata[0]['score'] += 1
+			uoptions['data'] = idata[0]
+		
+
+			mLab.updateDocuments(uoptions, function(err, input)
+			{
+				if (err) throw err
+				return
+			})
+		})
+
+	
+		mLab.updateDocuments(options, function(err, input)
+		{
+			if (err) throw err
+			console.log(input)
+
+		})
+	})
+}
+
+
+module.exports.getWinner = (dbName, colName, query, res) => {
+
+	let options = {
+		database: dbName,
+		collectionName: colName,
+		query: JSON.stringify(query)
+	}
+
+
+
+	mLab.listDocuments(options, function(err, data)
+	{
+		if (data.length > 0 && data[0].captions.length > 0)
+		{
+			let maxScore = data[0].captions[0]
+			for(let i = 1; i < data[0].captions.length; i++)
+			{
+				if(data[0].captions[i]['votes'] > maxScore['votes'])
+				{
+					maxScore = data[0].captions[i]
+				}
+			}
+
+			res.json(maxScore)
+		}
+		else
+		{
+			res.json( { message : "error - no players found" })
+		}
+	})
+}
+
 module.exports.submitCaption = (dbName, colName, query, caption, socket) => {
 	let options = {
 		database: dbName,
@@ -123,6 +227,7 @@ module.exports.submitCaption = (dbName, colName, query, caption, socket) => {
 			options['data'] = { captions : data[0].captions }
 		}
 
+		console.log(options['data'])
 	
 		mLab.updateDocuments(options, function(err, input)
 		{
