@@ -38,12 +38,12 @@ io.on('connection', function(socket)
 	{
 		sockets.push(socket)
 		socket.username = username
-		socket.currentRoom = {}
+		socket.currentRoom = { name : "", code : ""}
 	})
 	socket.on('room', function(newRoom)
 	{
 		joinRoom(socket, newRoom)
-		io.to(socket.currentRoom.code).emit('debug', 'You are in room ' + socket.currentRoom.code)
+        io.to(getCurrentRoom(socket)).emit('debug', 'You are in room ' + getCurrentRoom(socket))
 	})
 	socket.on('to_general', function(message)
 	{
@@ -66,9 +66,19 @@ io.on('connection', function(socket)
 	socket.on('disconnect', function()
 	{
 		console.log("client disconnected")
-		socket.leave(socket.currentRoom)
+        socket.leave(getCurrentRoom(socket))
 	})
 })
+
+function getCurrentRoom(socket)
+{
+    if (!socket.currentRoom)
+    {
+        socket.currentRoom = { name: "", code: "" }
+        return socket.currentRoom.code
+    }
+    return socket.currentRoom.code
+}
 
 function sendRoomMessage(roomCode, msgTag, msg)
 {
@@ -103,8 +113,8 @@ function joinRoom(socket, newRoom) {
 		}
 		else
 		{
-			if(socket.currentRoom != null && socket.currentRoom.code !== {}) {
-				socket.leave(socket.currentRoom.code)
+            if (getCurrentRoom(socket) !== {}) {
+                socket.leave(getCurrentRoom(socket))
 			}
 			socket.join(newRoom.code)
 			socket.currentRoom = newRoom
@@ -115,7 +125,7 @@ function joinRoom(socket, newRoom) {
 	options = {
 		database: DATABASE_NAME,
 		collectionName: "Users",
-		data: { room : socket.currentRoom.code},
+        data: { room: getCurrentRoom(socket)},
 		query: JSON.stringify({ name : socket.username })
 	}
 
