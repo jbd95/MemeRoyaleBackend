@@ -6,7 +6,7 @@ const express = require('express')
 const app = express()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || 3000
 const MAX_ROOM_COUNT = 1000000
 const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
 const DATABASE_NAME = "memeroyale"
@@ -14,6 +14,7 @@ const meme = require('./getMeme')
 const memegen = require('./memes')
 
 app.use('/meme',meme)
+app.set('json spaces', 4)
 
 let sockets = []
 
@@ -39,7 +40,16 @@ app.get('/rooms/create', function (req, res) {
 
 	let newRoom = {
 		name: '',
-		code: randomCode(MAX_ROOM_COUNT)
+		code: randomCode(MAX_ROOM_COUNT),
+		creator: "",
+		currentChooser: "",
+		isActive: 0,
+		hasStarted: 0,
+		isMemeSelected: 0,
+		currentMeme: {},
+		captions: [{}],
+		isSubmissionEnded: 0,
+		isVotingEnded: 0
 	}
 
 	if (req.query.name && req.query.name !== "") {
@@ -49,36 +59,6 @@ app.get('/rooms/create', function (req, res) {
 		newRoom.name = newRoom.code
 	}
 	createRoom(newRoom, res)
-
-
-
-	function createRoom(roomCode, res) { 
-
-		let options = {
-			database: DATABASE_NAME,
-			collectionName: "Rooms",
-			query: JSON.stringify({ code : newRoom.code})
-		}
-
-		mLab.listDocuments(options, function(err, data) {
-			if (err) throw err;
-
-			if (data.length === 0)
-			{
-				delete options['query']
-				options['documents'] = roomCode
-				mLab.insertDocuments(options, function(err, data)
-				{
-					if (err) throw err;
-						res.json({message: "success"})
-				})
-			}
-			else
-			{
-				res.json({message: "fail - room already exists"})
-			}
-		})
-	}
 })
 
 app.get('/rooms', function (req, res) { 
@@ -101,13 +81,13 @@ app.get('/rooms', function (req, res) {
 	})
 })
 
-app.get('/user/create', function(req, res)
+app.get('/users/create', function(req, res)
 {
 
 	let newUser = {
 		name : req.query.username,
 		room : {},
-		score : 0
+		score : 0,
 	}
 
 	let options = {
@@ -137,7 +117,7 @@ app.get('/user/create', function(req, res)
 
 })
 
-app.get('/user', function(req, res)
+app.get('/users', function(req, res)
 {
 	let options = {
 		database: DATABASE_NAME,
@@ -145,7 +125,9 @@ app.get('/user', function(req, res)
 		query: JSON.stringify({ name : req.query.username})
 	}
 
-	mLab.listDocuments(options, function(err, data) {
+	if (req.query.username)
+	{
+		mLab.listDocuments(options, function(err, data) {
 			if (err) throw err;
 
 			if (data.length === 0)
@@ -156,7 +138,26 @@ app.get('/user', function(req, res)
 			{
 				res.json(data[0])
 			}
-	})
+		})
+	}
+	else if(req.query.room)
+	{
+		options['query'] = JSON.stringify({ room : req.query.room})
+		mLab.listDocuments(options, function(err, data) {
+			if (err) throw err;
+
+			if (data.length === 0)
+			{
+				res.json({ users : [] })
+			}
+			else
+			{
+				res.json( { users : data })
+			}
+		})
+	}
+
+
 })
 
 
@@ -173,6 +174,42 @@ const func2 = (token, val2) => {
 
 }*/
 			
+
+function createRoom(roomCode, res) { 
+
+	let options = {
+		database: DATABASE_NAME,
+		collectionName: "Rooms",
+		query: JSON.stringify({ code : roomCode.code})
+	}
+
+	mLab.listDocuments(options, function(err, data) {
+		if (err) throw err;
+
+		if (data.length === 0)
+		{
+			delete options['query']
+			options['documents'] = roomCode
+			mLab.insertDocuments(options, function(err, data)
+			{
+				if (err) throw err;
+					res.json({message: "success"})
+			})
+		}
+		else
+		{
+			res.json({message: "fail - room already exists"})
+		}
+	})
+}
+
+const updateEntry = (dbName, colName, query, updates) => {
+	
+	let options = {
+			
+	}
+
+}
 
 
 /* SOCKET IO COMMUNICATION */
@@ -224,21 +261,7 @@ function sendRoomMessage(roomCode, msgTag, msg)
 	}
 }
 
-function getRoomUsers(roomCode)
-{
 
-	/*let ns = io.of("/");
-
-	if(ns)
-	{
-		for(let id in ns.connected) {
-			if (ns.connected[id].rooms[roomCode])
-			{
-				users.push(ns.connected
-			}
-		}
-	}*/
-}
 
 function joinRoom(socket, newRoom) {
 	
@@ -269,24 +292,11 @@ function joinRoom(socket, newRoom) {
 	options = {
 		database: DATABASE_NAME,
 		collectionName: "Users",
-		query: JSON.stringify(newRoom)
+		data: { room : socket.currentRoom.code},
+		query: JSON.stringify({ name : socket.username })
 	}
 
 	mLab.updateDocuments(options, function(err, data) {
 		if (err) throw err;
-
-		if (data.length === 0)
-		{
-			socket.emit('debug', 'fail - room does not exist')
-		}
-		else
-		{
-			if(socket.currentRoom.code !== {}) {
-				socket.leave(socket.currentRoom.code)
-			}
-			socket.join(newRoom.code)
-			socket.currentRoom = newRoom
-			socket.emit('debug', 'success')
-		}
 	})
 }
