@@ -7,7 +7,6 @@ const app = express()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const PORT = process.env.PORT || 3000
-const MAX_ROOM_COUNT = 1000000
 const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
 const DATABASE_NAME = "memeroyale"
 const memegen = require('./memes')
@@ -23,10 +22,6 @@ http.listen(PORT, function () {
 	console.log('listening on *:', PORT)
 })
 
-
-const randomCode = max => {
-	return  Math.floor((Math.random() * max) + 1).toString(16).toUpperCase();
-}
 
 /* SOCKET IO COMMUNICATION */
 
@@ -55,7 +50,7 @@ io.on('connection', function(socket)
 	/* SET FUNCTIONS*/
 	socket.on('creator', function(data)
 	{
-		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { creator : data.name })	
+		mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : data.code }, { creator : data.name, currentChooser: data.name })	
 	})
 		
 	socket.on('caption', function(data)

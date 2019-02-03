@@ -19,7 +19,7 @@ module.exports.createRoom = (roomCode, res)=>{
 			mLab.insertDocuments(options, function(err, data)
 			{
 				if (err) throw err;
-					res.json(newRoom)
+					res.json(roomCode)
 			})
 		}
 		else
@@ -29,7 +29,7 @@ module.exports.createRoom = (roomCode, res)=>{
 	})
 }
 
-module.exports.getEntry = (dbName, colName, query, socket, msgTag) => {
+module.exports.getEntry = (dbName, colName, query, res) => {
 	let options = {
 		database: dbName,
 		collectionName: colName,
@@ -39,7 +39,7 @@ module.exports.getEntry = (dbName, colName, query, socket, msgTag) => {
 	mLab.listDocuments(options, function(err, data)
 	{
 		if (err) throw err
-		socket.emit(msgTag, data)
+		res.json(data)
 	})
 
 }
@@ -68,6 +68,24 @@ module.exports.submitCaption = (dbName, colName, query, caption, socket) => {
 		query: JSON.stringify(query)
 	}
 
+
+	let uoptions = {
+		database: dbName,
+		collectionName: 'Users',
+		query: JSON.stringify({ room : query.code})
+	}
+
+
+	let users = null
+
+	mLab.listDocuments(uoptions, function(err, data)
+	{
+		if (err) throw err
+	
+		users = data.length
+	})
+
+
 	mLab.listDocuments(options, function(err, data)
 	{
 		if(err) throw err
@@ -91,8 +109,21 @@ module.exports.submitCaption = (dbName, colName, query, caption, socket) => {
 			data[0].captions.push(caption)
 		}
 
-		options['data'] = { captions : data[0].captions}
 
+		console.log(data[0])
+		console.log(data[0].captions.length)
+		console.log(users - 1)
+		
+		if(data[0].captions.length >= (users - 1))
+		{
+			options['data'] = { captions : data[0].captions, isSubmissionEnded : 1 }
+		}
+		else
+		{
+			options['data'] = { captions : data[0].captions }
+		}
+
+	
 		mLab.updateDocuments(options, function(err, input)
 		{
 			if (err) throw err;
@@ -101,4 +132,6 @@ module.exports.submitCaption = (dbName, colName, query, caption, socket) => {
 		})
 	})
 }
+
+
 

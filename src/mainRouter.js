@@ -4,6 +4,7 @@ const mLab = require('mongolab-data-api')('w3f-NV1j2Csrdt0WOoC38yI2Rm2IgAj7')
 let mLabHelpers = require('./mLabHelpers')
 const meme = require('./getMeme')
 const DATABASE_NAME = "memeroyale"
+const MAX_ROOM_COUNT = 1000000
 
 app.use('/meme',meme)
 
@@ -22,6 +23,25 @@ app.get('/rooms/msg', function (req, res) {
 	res.send("thanks")
 })
 
+app.get('/rooms/start', function(req, res) {
+	console.log('starting game')
+	mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : req.query.room }, {hasStarted: 1, isMemeSelected: 0})
+	res.json({ message : 'game started'})
+})
+
+app.get('/rooms/room', function(req, res)
+{
+	console.log("started check")
+	mLabHelpers.getEntry(DATABASE_NAME, 'Rooms', { code : req.query.room }, res)
+})
+
+app.get('/rooms/meme/select', function(req, res)
+{
+	console.log("setting meme to " + req.query.meme)
+	mLabHelpers.updateEntry(DATABASE_NAME, 'Rooms', { code : req.query.room }, { currentMeme : decodeURIComponent(req.query.meme), isMemeSelected: 1, isSubmissionEnded: 0, isVotingEnded: 0 })
+	res.json({ message: 'meme selected'  })
+})
+
 app.get('/rooms/create', function (req, res) {
 
 	let newRoom = {
@@ -29,7 +49,7 @@ app.get('/rooms/create', function (req, res) {
 		code: randomCode(MAX_ROOM_COUNT),
 		creator: "",
 		currentChooser: "",
-		isActive: 0,
+		isActive: 1,
 		hasStarted: 0,
 		isMemeSelected: 0,
 		currentMeme: {},
@@ -46,6 +66,11 @@ app.get('/rooms/create', function (req, res) {
 	}
 	mLabHelpers.createRoom(newRoom, res)
 })
+
+app.get('/rooms/meme/vote', function(req, res)
+{
+	mLabHelps.updateEntity(DATABASE_NAME, 'Rooms', { code : req.query.code }, 
+}
 
 app.get('/rooms', function (req, res) { 
 
@@ -146,4 +171,8 @@ app.get('/users', function(req, res)
 
 })
 
+
+const randomCode = max => {
+	return  Math.floor((Math.random() * max) + 1).toString(16).toUpperCase();
+}
 module.exports = app;
