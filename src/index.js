@@ -47,7 +47,7 @@ app.get('/rooms/create', function (req, res) {
 		hasStarted: 0,
 		isMemeSelected: 0,
 		currentMeme: {},
-		captions: [{}],
+		captions: [],
 		isSubmissionEnded: 0,
 		isVotingEnded: 0
 	}
@@ -206,11 +206,60 @@ function createRoom(roomCode, res) {
 const updateEntry = (dbName, colName, query, updates) => {
 	
 	let options = {
-			
+		database: dbName,
+		collectionName: colName,
+		data: updates,
+		query: query,
 	}
+
+	mLab.updateDocuments(options, function(err, data)
+	{
+		if(err) throw err
+		return
+	})
 
 }
 
+const submitCaption = (dbName, colName, query, caption, socket) => {
+	let options = {
+		database: dbName,
+		collectionName: colName,
+		query: JSON.stringify(query)
+	}
+
+	mLab.listDocuments(options, function(err, data)
+	{
+		if(err) throw err
+		if (data.length <= 0)
+		{
+			return
+		}
+	
+		let replaced = false
+		for (let i = 0; i < data[0].captions.length; i++)
+		{
+			if (data[0].captions[i].name === caption.name)
+			{
+				data[0].captions[i] = caption
+				replaced = true
+			}
+		}
+
+		if(!replaced)
+		{
+			data[0].captions.push(caption)
+		}
+
+		options['data'] = { captions : data[0].captions}
+
+		mLab.updateDocuments(options, function(err, input)
+		{
+			if (err) throw err;
+			console.log(input)
+			socket.emit('debug', 'caption recieved')
+		})
+	})
+}
 
 /* SOCKET IO COMMUNICATION */
 
@@ -236,6 +285,17 @@ io.on('connection', function(socket)
 	{
 		console.log("server recieved: " + message)
 		io.to("general").emit('general_message', message)
+	})
+
+	socket.on('creator', function(data)
+	{
+		//updateEntry(DATABASE_NAME, 'Rooms', { creator : data.name });)	
+	})
+		
+	socket.on('caption', function(data)
+	{
+		console.log(data)
+		submitCaption(DATABASE_NAME, 'Rooms', { code : data.code }, { name : data.name, caption : data.caption, votes : 0 }, socket) 
 	})
 	
 	socket.on('disconnect', function()
